@@ -1,7 +1,19 @@
 import cv2
 import numpy as np
 import json
-
+def vconcat_resize(img_list, interpolation 
+                   = cv2.INTER_CUBIC):
+      # take minimum width
+    w_min = min(img.shape[1] 
+                for img in img_list)
+      
+    # resizing images
+    im_list_resize = [cv2.resize(img,
+                      (w_min, int(img.shape[0] * w_min / img.shape[1])),
+                                 interpolation = interpolation)
+                      for img in img_list]
+    # return final image
+    return cv2.vconcat(im_list_resize)
 
 def calibrated_image(ori,images):
 
@@ -68,7 +80,7 @@ for shape in Shape:
     W+=sw
 bg_img= cv2.copyMakeBorder(np.zeros((H,W,3),np.uint8), pad, pad, pad, pad, cv2.BORDER_CONSTANT, None, value = 0)
 
-pre=2
+pre=1
 f_=0
 ori={"bg_shape":[pad,H,W]}
 def clear(images):
@@ -76,18 +88,64 @@ def clear(images):
 
     global ori,ver,hori,ver2,hori2,ver3,hori3,ver4,hori4
     bg= cv2.copyMakeBorder(np.zeros((H,W,3),np.uint8), pad, pad, pad, pad, cv2.BORDER_CONSTANT, None, value = 0)
-    if len(ori)>=2:
-        bg[ori["img1"][0] :ori["img1"][1],ori["img1"][2]:ori["img1"][3]]=img1
-    if len(ori)>=3:
-        bg[ori["img2"][0] :ori["img2"][1],ori["img2"][2]:ori["img2"][3]]=img2
-    if len(ori)>=4:
-         bg[ori["img3"][0] :ori["img3"][1],ori["img3"][2]:ori["img3"][3]]=img3
-    if len(ori)==5:
-         bg[ori["img4"][0] :ori["img4"][1],ori["img4"][2]:ori["img4"][3]]=img4
+    if img_no==1:
+
+        if len(ori)>=3:
+            bg[ori["img2"][0] :ori["img2"][1],ori["img2"][2]:ori["img2"][3]]=img2
+        if len(ori)>=4:
+            bg[ori["img3"][0] :ori["img3"][1],ori["img3"][2]:ori["img3"][3]]=img3
+        if len(ori)==5:
+            bg[ori["img4"][0] :ori["img4"][1],ori["img4"][2]:ori["img4"][3]]=img4
+        if len(ori)>=2:
+            bg[ori["img1"][0] :ori["img1"][1],ori["img1"][2]:ori["img1"][3]]=img1
+    if img_no==2:
+
+        if len(ori)>=4:
+            bg[ori["img3"][0] :ori["img3"][1],ori["img3"][2]:ori["img3"][3]]=img3
+        if len(ori)==5:
+            bg[ori["img4"][0] :ori["img4"][1],ori["img4"][2]:ori["img4"][3]]=img4
+        if len(ori)>=2:
+            bg[ori["img1"][0] :ori["img1"][1],ori["img1"][2]:ori["img1"][3]]=img1
+        if len(ori)>=3:
+            bg[ori["img2"][0] :ori["img2"][1],ori["img2"][2]:ori["img2"][3]]=img2
+
+    if img_no==3:
+
+
+        if len(ori)==5:
+            bg[ori["img4"][0] :ori["img4"][1],ori["img4"][2]:ori["img4"][3]]=img4
+        if len(ori)>=2:
+            bg[ori["img1"][0] :ori["img1"][1],ori["img1"][2]:ori["img1"][3]]=img1
+        if len(ori)>=3:
+            bg[ori["img2"][0] :ori["img2"][1],ori["img2"][2]:ori["img2"][3]]=img2
+        if len(ori)>=4:
+            bg[ori["img3"][0] :ori["img3"][1],ori["img3"][2]:ori["img3"][3]]=img3
+    if img_no==4:
+
+
+
+        if len(ori)>=2:
+            bg[ori["img1"][0] :ori["img1"][1],ori["img1"][2]:ori["img1"][3]]=img1
+        if len(ori)>=3:
+            bg[ori["img2"][0] :ori["img2"][1],ori["img2"][2]:ori["img2"][3]]=img2
+        if len(ori)>=4:
+            bg[ori["img3"][0] :ori["img3"][1],ori["img3"][2]:ori["img3"][3]]=img3
+        if len(ori)==5:
+            bg[ori["img4"][0] :ori["img4"][1],ori["img4"][2]:ori["img4"][3]]=img4
+
     return bg
 def mover_image(images,dia):
     global  ori,ver,hori,ver2,hori2,ver3,hori3,ver4,hori4,pad,bg_img,img_no
-   
+    control=np.ones((600,bg_img.shape[1],3),np.uint8)*255
+    text1=   "  For The Movement of Image      Press 'w' For UP           Press 's' For DOWN         Press 'a' For LEFT           Press 'd' for RIGHT  "
+
+    text2=   "  For Selection of Image         For 1st Image press '1'    For 2nd Image press '2'    For 3rd Image press '3'    For 4th Image press '4'"
+    text3=   "                                          After the calibration is done press 'f' to save the calibration                                                 "           
+
+    control=cv2.putText(control,text=text1,org=(400,100),  fontFace = cv2.FONT_HERSHEY_DUPLEX,  fontScale = 3.0,  color = 0,  thickness = 6)
+    control=cv2.putText(control,text=text2,org=(400,300),  fontFace = cv2.FONT_HERSHEY_DUPLEX,  fontScale = 3.0,  color = 0,  thickness = 6)
+    control=cv2.putText(control,text=text3,org=(400,500),  fontFace = cv2.FONT_HERSHEY_DUPLEX,  fontScale = 3.0,  color = 0,  thickness = 6)
+
     while True:
          
         img1,img2,img3,img4=images
@@ -101,6 +159,7 @@ def mover_image(images,dia):
         # cv2.imshow("image",images[1])
 
         # cv2.imshow("zoomed",zoom_at(image,zoom=n))
+        overall_bg=vconcat_resize([control,bg_img])
         k=cv2.waitKey(1)
         # print(k)
         if k==ord('1'):
@@ -160,7 +219,7 @@ def mover_image(images,dia):
             
         if img_no==3:
             # bg_img[0:h3,w1+w2:w1+w2+w3]=img3
-            bg_img[pad+ver3:h1+ver3+pad,pad+hori3+w1+w2:w1+w2+w3+hori3+pad]=img3
+            bg_img[pad+ver3:h1+ver3+pad,  pad+hori3+w1+w2:w1+w2+w3+hori3+pad]=img3
 
                 ###  vertical move
             if k==ord("w"):
@@ -212,7 +271,7 @@ def mover_image(images,dia):
         k=0
         cv2.namedWindow("calibrate",cv2.WINDOW_NORMAL)
 
-        cv2.imshow("calibrate",bg_img)
+        cv2.imshow("calibrate",overall_bg)
         
         
     cv2.destroyAllWindows()

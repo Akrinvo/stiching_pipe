@@ -2,13 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import json
 def predict_points(d1):
-    d = np.array([20, 25, 30, 35, 40, 40.36, 45, 50,52.66, 55,28.42])
+    d = np.array([20, 25, 30, 35, 40, 45, 50,52.66])
     
-    x_1 = np.array([0.31745, 0.27181, 0.26618, 0.18053,
-                        0.13490, 0.13161, 0.08926, 0.04362, 0.01934, -0.00202,0.24114])
+    x_1 = np.array([0.32542,0.28178,0.23814,0.19449,0.15085,0.10720,0.06356,0.04034])
 
-    y_2 = np.array([0.12069, 0.11109, 0.10106, 0.09055,
-                        0.07956, 0.07874, 0.06802, 0.05590, 0.04921, 0.04317,0.10428])
+    y_2 = np.array([0.13159,0.12209,0.11209,0.10154,0.09040,0.07863,0.06615,0.05921])
     
 
     func_up = np.polyfit(d, x_1, 1)
@@ -18,7 +16,9 @@ def predict_points(d1):
     func_low = np.polyfit(d, y_2, 1)
     func2 = np.poly1d(func_low)
     y2 = func2(d1)
-    plt.plot(d,x_1,"+")
+    plt.plot(d,x_1)
+    plt.show()
+    plt.plot(d,y_2)
     plt.show()
     
     return x1,y2

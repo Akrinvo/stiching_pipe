@@ -3,7 +3,22 @@ import numpy as np
 import cv2
 import random
 from unwrap import *
-wid_all=600
+import os
+
+
+wid_all=2401
+
+
+def image_loc(foldername):
+    # extractte file
+    fileName = []
+    for root, dirs, files in os.walk(os.path.abspath(foldername)):
+        for namef in files:
+            #                 print(os.path.abspath(os.path.join(root, namef)))
+            file_name = os.path.abspath(os.path.join(root, namef))
+            fileName.append(file_name)
+    return fileName
+
 def hconcat_resize(img_list, 
                    interpolation 
                    = cv2.INTER_CUBIC):
@@ -143,7 +158,7 @@ def removenoise(image,plan_rod=True):
                     gray, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)[1]
                 print("inverse")
         else:
-            thresh=cv2.Canny(gray.T,11,50,2)
+            thresh=cv2.Canny(gray.T,10,75,2)
 
         thresh=cv2.dilate(thresh,(3,3),iterations=10)
 
@@ -151,7 +166,7 @@ def removenoise(image,plan_rod=True):
         thresh = image
     if plan_rod:
         mul=4.5
-    else:mul=1.5
+    else:mul=1.2
     
     Thres = thresh.copy()
     height, width = thresh.shape
@@ -165,13 +180,13 @@ def removenoise(image,plan_rod=True):
     for y in range(0, height):
         if np.sum(thresh[y][:]) == 0:
 
-            if y < 200:
+            if y < 300:
                 thresh[:y][:] = 0
                 break
 
     for y in range(height-1, 0, -1):
         if np.sum(thresh[y][:]) == 0:
-            if y > height-200:
+            if y > height-300:
                 thresh[y:][:] = 0
                 break
     return thresh.T, Thres.T
@@ -190,13 +205,20 @@ def vconcat_resize(img_list, interpolation
     # return final image
     return cv2.vconcat(im_list_resize)
 def predict_points(d1):
-    d = np.array([20, 25, 30, 35, 40, 40.36, 45, 50,52.66, 55,28.42])
+    # d = np.array([20, 25, 30, 35, 40, 40.36, 45, 50,52.66, 55,28.42])
     
-    x_1 = np.array([0.31745, 0.27181, 0.26618, 0.18053,
-                        0.13490, 0.13161, 0.08926, 0.04362, 0.01934, -0.00202,0.24114])
+    # x_1 = np.array([0.31745, 0.27181, 0.26618, 0.18053,
+    #                     0.13490, 0.13161, 0.08926, 0.04362, 0.01934, -0.00202,0.24114])
 
-    y_2 = np.array([0.12069, 0.11109, 0.10106, 0.09055,
-                        0.07956, 0.07874, 0.06802, 0.05590, 0.04921, 0.04317,0.10428])
+    # y_2 = np.array([0.12069, 0.11109, 0.10106, 0.09055,
+    #                     0.07956, 0.07874, 0.06802, 0.05590, 0.04921, 0.04317,0.10428])
+
+    d = np.array([20, 25, 30, 35, 40, 45, 50,52.66])
+    
+    x_1 = np.array([0.32542,0.28178,0.23814,0.19449,0.15085,0.10720,0.06356,0.04034])
+
+    y_2 = np.array([0.13159,0.12209,0.11209,0.10154,0.09040,0.07863,0.06615,0.05921])
+    
     
 
     func_up = np.polyfit(d, x_1, 1)
@@ -218,13 +240,13 @@ def unrap(frame,plan_rod=False,two_points=None):
     
     contours, _ = cv2.findContours(
         new, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    for cntr in contours:
-        cv2.drawContours(frame, [cntr], 0, (255, 25, 255), -1)
+    # for cntr in contours:
+    #     cv2.drawContours(frame, [cntr], 0, (255, 25, 255), -1)
     
     contours = np.concatenate(contours)
     x, y, w, h = cv2.boundingRect(contours)
 
-    cv2.rectangle(frame, (x, y), (x+w, y+frame.shape[1]), (25, 255, 255), 3)
+    # cv2.rectangle(frame, (x, y), (x+w, y+frame.shape[1]), (25, 255, 255), 3)
     # cv2.imshow("frammm",frame)
     # print(w-10)
     if w-10!=wid_all:

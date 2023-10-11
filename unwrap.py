@@ -58,8 +58,8 @@ class Line(object):
 
 
 class LabelUnwrapper(object):
-    COL_COUNT = 20
-    ROW_COUNT = 30
+    COL_COUNT = 70
+    ROW_COUNT = 80
 
     def __init__(self, src_image=None, pixel_points=None, percent_points=None):
         """
@@ -249,7 +249,7 @@ class LabelUnwrapper(object):
             rows.append(row)
         return np.array(rows)
 
-    def draw_mesh(self, color=RED_COLOR, thickness=2):
+    def draw_mesh(self, color=RED_COLOR, thickness=4):
         mesh = self.calc_source_map()
         for row in mesh:
             for x, y in row:
@@ -257,10 +257,10 @@ class LabelUnwrapper(object):
                 cv2.line(self.src_image, point, point, color=color, thickness=thickness)
 
     def draw_poly_mask(self, color=WHITE_COLOR):
-        cv2.polylines(self.src_image, np.int32([self.points]), 1, color)
+        cv2.polylines(self.src_image, np.int32([self.points]), 4, color)
 
 
-    def draw_mask(self, color=WHITE_COLOR, thickness=1, img=None):
+    def draw_mask(self, color=WHITE_COLOR, thickness=4, img=None):
         """
         Draw mask, if image not specified - draw to source image
         """
@@ -273,7 +273,7 @@ class LabelUnwrapper(object):
         self.draw_ellipse(img, self.point_a, self.point_b, self.point_c, color, thickness)
         self.draw_ellipse(img, self.point_d, self.point_e, self.point_f, color, thickness)
 
-    def get_label_contour(self, color=WHITE_COLOR, thickness=1):
+    def get_label_contour(self, color=WHITE_COLOR, thickness=4):
         mask = np.zeros(self.src_image.shape)
         self.draw_mask(color, thickness, mask)
         return mask
@@ -289,7 +289,7 @@ class LabelUnwrapper(object):
         self.draw_filled_ellipse(mask, self.point_f, self.point_e, self.point_d, False)
         return mask
 
-    def draw_ellipse(self, img, left, top, right, color=WHITE_COLOR, thickness=1):
+    def draw_ellipse(self, img, left, top, right, color=WHITE_COLOR, thickness=4):
         """
         Draw ellipse using opencv function
         """

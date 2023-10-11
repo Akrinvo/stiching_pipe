@@ -40,7 +40,7 @@ class camera_streams:
         self.bgr_img = self.frame = np.ndarray(shape=(self.capture.Height.Value, self.capture.Width.Value, 3),
                                                dtype=np.uint8)
 
-    def get_frame(self, size):
+    def get_frame(self):
 
         grabResult = self.capture.RetrieveResult(
             5000, pylon.TimeoutHandling_ThrowException)
@@ -53,7 +53,7 @@ class camera_streams:
             self.bgr_img[:, :, 2] = frame[:, :, 0]
             # print(self.bgr_img.shape, "----")
             self.frame = self.bgr_img.copy()
-            self.frame = cv2.resize(self.frame, size)
+        
         else:
             print("Error in frame grabbing.")
         grabResult.Release()
@@ -82,7 +82,8 @@ cor=json.dumps(shape)
 with open(f"xy{52.66}.json", "w") as dic:
             dic.write(cor)
   
-cv2.namedWindow('select_points')
+cv2.namedWindow("select_points",cv2.WINDOW_NORMAL)
+
 
 # bind the callback function to window
 cv2.setMouseCallback('select_points', click_event)
@@ -133,8 +134,11 @@ def Unwrap(image,points=None):
     x_s=x_correction.copy()
     for points in range(0,x_s.shape[0],20):
       sharpen=  cv2.line(x_s,(0,points),(100000,points),(0,255,0),1)
+    cv2.namedWindow("x_",cv2.WINDOW_NORMAL)
+    
     cv2.imshow('x_', x_s)
 
+    cv2.namedWindow("image_with_mask.png",cv2.WINDOW_NORMAL)
 
     cv2.imshow("image_with_mask.png", padimage)
     shape = {"tag": "label", "shape": [{"x": 0.0131332142857142842, "y": 0.020259140625},
@@ -169,6 +173,7 @@ def Unwrap(image,points=None):
   
     # cv2.imshow('_sharpen', sharpen)
 
+    cv2.namedWindow("y_image_with_mask.png",cv2.WINDOW_NORMAL)
 
     cv2.imshow("y_image_with_mask.png", padimage)
     sharpen = cv2.rotate(y_correctio, cv2.ROTATE_90_COUNTERCLOCKWISE)
@@ -241,7 +246,7 @@ y_m1=0
 x_m2=0
 y_m2=0
 while True:
-    frame = cap.get_frame((680, 500))
+    frame = cap.get_frame()
     fam=frame.copy()
     new, thresh = removenoise(frame,plan_rod=False)
     new=cv2.dilate(new,(3,3),iterations=4)
@@ -262,10 +267,10 @@ while True:
     xy_corr = open('xy52.66.json')
     s_img=fam.copy()
     height,width=s_img.shape[:2]
-    cv2.line(s_img, (width // 2, 0), (width // 2, height), (255, 0, 255), 1)
-    cv2.line(s_img, (0, height // 2), (width, height // 2), (255, 0, 255), 1)
+    cv2.line(s_img, (width // 2, 0), (width // 2, height), (255, 0, 255), 2)
+    cv2.line(s_img, (0, height // 2), (width, height // 2), (255, 0, 255), 2)
     for point in points:
-        cv2.circle(s_img, (point[0],point[1]), 1, (0,255,255), -1)
+        cv2.circle(s_img, (point[0],point[1]), 2, (0,255,255), -1)
 
     # for p in range(0,s_img.shape[1],30):
     #   sharpen=  cv2.line(s_img,(p,0),(p,100000),(0,255,0),1)
@@ -280,7 +285,7 @@ while True:
     cv2.imshow("select_points",s_img)
     # points=[[54, 89], [340, 40], [632, 86], [632, 413], [338, 461], [55, 414]]
     # points=[[53, 70], [340, 15], [627, 70], [627, 430], [340, 485], [53, 430]]  
-    points=[[120,70],[340,30]]
+    # points=[[120,70],[340,30]]
     if len(points)==2:
         
 
@@ -298,9 +303,14 @@ while True:
 
         xy_corr = json.load(xy_corr)
         y_x_unr=Unwrap(fam,points)
+        cv2.namedWindow("final",cv2.WINDOW_NORMAL)
+
         cv2.imshow('final', y_x_unr)
 
     # except:pass
+    cv2.namedWindow("1",cv2.WINDOW_NORMAL)
+    cv2.namedWindow("11",cv2.WINDOW_NORMAL)
+
     cv2.imshow("1", fam)
     
     cv2.imshow("11", frame)

@@ -11,7 +11,20 @@ import threading
 from threading import Thread, Lock
 from tkinter.messagebox import askyesno
 import matplotlib.pyplot as plt
+import serial as srx
+import time
 import os
+# os.system("sudo chmod a+rw /dev/stich")
+from subprocess import call   
+from hori_concat import calibrated_Himage ,hori_move,hori_oneByone
+
+pwd='123456'
+cmd='chmod a+rw /dev/stich'
+
+call('echo {} | sudo -S {}'.format(pwd, cmd), shell=True)
+SerialObj = srx.Serial('/dev/stich') 
+                  
+SerialObj.baudrate = 9600 
 final_img=0
 good_img,bad_img = 0,0
 dia_lbl = None
@@ -66,8 +79,8 @@ def load_image(path, width, height):
 
 
 def logo(x):
-    heading = Label(x, text="Compaq work", font=("times new roman", 30, "bold"), bg=bg_color,
-                fg="black", relief=GROOVE)
+    heading = Label(x, text="Rod Inspection", font=("times new roman", 20, "bold"), bg=bg_color,    #compac
+                fg="black")
     image_tk = load_image("logo.jpeg",150,50)
     image_label2 = Label(heading, image=image_tk)
     image_label2.image = image_tk  # Store a reference to the image to prevent garbage collection
@@ -115,7 +128,7 @@ def save_good():
             # dir_path = os.path.join(good_dir,dir_nm)
             # if not os.path.exists(dir_path):
             #     os.mkdir(dir_path)
-            d_path = f"{good_dir}/{good_img}.jpg"
+            d_path = f"{good_dir}/{good_img}_.jpg"
             # if not os.path.exists(d_path):
             #     cv2.imwrite(f"{good_dir}/{good_img}.jpg",final_img) 
             while os.path.exists(d_path):
@@ -125,7 +138,18 @@ def save_good():
                 print("$")
             print(good_img)
             cv2.imwrite(d_path,final_img) 
-            messagebox.showinfo("showinfo","saved")
+
+            if good_img>=2:
+                try:
+                    with open(f"horiz{dia}.json","r") as openfile:
+                            hor_ori=json.load(openfile)
+                    hori_oneByone(ori=hor_ori,path=path)
+                except:
+                    messagebox.showinfo("info","please do horizontal calibration ")
+
+            
+            # messagebox.showinfo("showinfo","saved")
+
 
         else:
             messagebox.showerror("showerror","Please Capture the image first..")
@@ -142,15 +166,23 @@ def save_bad():
         # dir_path = os.path.join(filname,dir_nm)
         # if not os.path.exists(dir_path):
         #     os.mkdir(dir_path) 
-        d_path = f"{filname}/ng_{good_img}.jpg"
+        d_path = f"{filname}/{good_img}_ng.jpg"
         while os.path.exists(d_path):
         #     print("#")
             good_img += 1
-            d_path = f"{filname}/ng_{good_img}.jpg"
+            d_path = f"{filname}/{good_img}_ng.jpg"
             print("$")
         print(good_img)
         cv2.imwrite(d_path,final_img)
-        messagebox.showinfo("showinfo","saved")
+        if good_img>=2:
+            try:
+                with open(f"horiz{dia}.json","r") as openfile:
+                    hor_ori=json.load(openfile)
+                hori_oneByone(ori=hor_ori,path=path)
+            except:
+                    messagebox.showinfo("info","please do horizontal calibration ")
+
+
 
     else:
         messagebox.showerror("showerror","Please Capture the image first..")
@@ -162,7 +194,7 @@ def last_window():
     global calib_flage,label_prev
     def exit_function():
         global calib_flage
-        messagebox.showwarning("showwarning","Do u want to exit?")
+        messagebox.showwarning("warning","Do you want to exit?")
         last_window.destroy()
         calib_flage = False
     if calib_flage:
@@ -173,7 +205,8 @@ def last_window():
         last_window.title("INTERFACE")
         # last_window.wm_attributes('-fullscreen', 'True')
         # last_window.overrideredirect(True)
-        last_window.geometry("1500x800")
+        last_window.minsize(width=1400, height=800)
+        last_window.maxsize(width=1400, height=800)
         last_window.protocol("WM_DELETE_WINDOW",exit_function)
         # popup_window()
 
@@ -262,12 +295,9 @@ def last_window():
                 plt.show()
             # else:
             #     messagebox.showwarning("showwarning", "Please fill the serial no and select the diameter...")
-            
-                
-
-        def work():
-            print("work start")
+        def next_frame():
             global dia, label2,capture_w
+
             if label2:
                 label2.destroy()
             if dia == 0:
@@ -278,8 +308,51 @@ def last_window():
                 messagebox.showerror("showerror","Please save the serial no..")
             else:
                 capture_w = False
+                  
                 update_frame1()
-            print("work done")
+        def reset_():
+            global SerialObj
+            messagebox.showwarning("Warning", "Rest Cam Possition")
+            print("reset")
+            SerialObj.write(b'r') 
+            
+
+
+        def backword_pipe():   
+            global dia, label2,capture_w,SerialObj
+
+            if label2:
+                label2.destroy()
+            if dia == 0:
+                messagebox.showwarning("Warning", "Please select the diameter...")
+            elif len(input_entry.get()) == 0:
+                messagebox.showwarning("Warning", "Please fill the serial no...")
+            elif not serial:
+                messagebox.showerror("Error","Please save the serial no..")
+            else:
+                # capture_w = False
+                SerialObj.write(b'b')  
+                
+
+
+                
+
+        def forword_pipe():
+            
+            global dia, label2,capture_w,SerialObj
+
+            if label2:
+                label2.destroy()
+            if dia == 0:
+                messagebox.showwarning("showwarning", "Please select the diameter...")
+            elif len(input_entry.get()) == 0:
+                messagebox.showwarning("showwarning", "Please fill the serial no...")
+            elif not serial:
+                messagebox.showerror("showerror","Please save the serial no..")
+            else:
+                # capture_w = False
+                SerialObj.write(b'u')  
+              
         # p1 = multiprocessing.Process(target=update_frame1,args=(2,))
 
         def directory_path(dia):
@@ -379,7 +452,20 @@ def last_window():
             # update_frame1()
             print("process")
             # new_w.destroy()
-            
+
+        def horizonatl_callibrate():
+            global path,good_img,dia
+            good_img = len(os.listdir(path))
+
+            if good_img >= 2:
+                hori_move(path=path,dia=dia)
+  
+            else:
+                messagebox.showwarning("warning", "Must contain atleast two images ...")
+ 
+
+
+            pass    
         
         def serial_no():
             global dia,serial,path
@@ -583,12 +669,14 @@ def last_window():
 
         drop.pack(pady=5)
 
-        diameter = LabelFrame(last_window,text="Serial No : ",font=("times new roman", 15, "bold"))
+        diameter = LabelFrame(last_window,text="Dir Name : ",font=("times new roman", 15, "bold"))
         dia_lbl = Label(diameter,text=f"dia",font=("times new roman", 10, "bold"), padx=10, pady=10)
         dia_lbl.pack()
         diameter.place(x=10, y=70)
-
-        canvas = Canvas(last_window,height=700,width=1200 )
+        forword_label=Label(last_window,text=f"Cam Motion",font=("times new roman", 12, "bold"), padx=5, pady=5)
+        forword_label.pack()
+        forword_label.place(x=270,y=620)
+        canvas = Canvas(last_window,height=500,width=1100 )
     
         canvas.pack()
 
@@ -624,7 +712,7 @@ def last_window():
             print(calib_flage)
             last_window.destroy()
 
-        input_label = Label(last_window, text="Serial no :",font=("times new roman",10, "bold"),fg="black", height=1, width=10)
+        input_label = Label(last_window, text="Serial No :",font=("times new roman",10, "bold"),fg="black", height=1, width=10)
         input_label.place(x=1230, y=60)
         input_entry = Entry(last_window)
         input_entry.place(x=1200,y=80)
@@ -638,7 +726,7 @@ def last_window():
         # update_frame1()
         # print(x)   
 
-        open_another_button = Button(last_window, text="Forward",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=work)
+        open_another_button = Button(last_window, text="Forward",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=forword_pipe)
         open_another_button.place(x=170,y=650)
 
         open_another_button4 = Button(last_window, text="Preview",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=preview_plt)
@@ -647,23 +735,32 @@ def last_window():
         open_another_button5 = Button(last_window, text="Previous",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=previous)
         open_another_button5.place(x=950,y=650)
 
-        open_another_button6 = Button(last_window, text="Capture",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=capture)
-        open_another_button6.place(x=700,y=750)
+        open_another_button6 = Button(last_window, text="Capture",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=next_frame)
+        open_another_button6.place(x=170,y=720)
 
-        open_another_button7 = Button(last_window, text="Next",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=next_image)
-        open_another_button7.place(x=1100,y=650)
+        process_btn = Button(last_window, text="Process",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=capture)
+        process_btn.place(x=320,y=720)
 
-        open_another_button8 = Button(last_window, text="Backward",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=capture)
-        open_another_button8.place(x=320,y=650)
+        next_btn = Button(last_window, text="Next",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=next_image)
+        next_btn.place(x=1100,y=650)
 
-        open_another_button1 = Button(last_window, text="Exit",font=("times new roman",15, "bold"),fg="white", bg="red", height=1, width=10,command=destroy_last_window)
-        open_another_button1.place(x=1320,y=750)
+        backward_btn = Button(last_window, text="Backward",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=backword_pipe)
+        backward_btn.place(x=320,y=650)
 
-        open_another_button2 = Button(last_window, text="OK",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=lambda:save_good())
-        open_another_button2.place(x=10, y=750)
+        exit_btn = Button(last_window, text="Exit",font=("times new roman",15, "bold"),fg="white", bg="red", height=1, width=10,command=destroy_last_window)
+        exit_btn.place(x=1220,y=750)
+
+        open_another_button2 = Button(last_window, text="OK",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=3,command=lambda:save_good())
+        open_another_button2.place(x=500, y=695)
         
-        open_another_button3 = Button(last_window, text="NG",font=("times new roman",15, "bold"),fg="white", bg="red", height=1, width=10,command=lambda:save_bad())
-        open_another_button3.place(x=180, y=750)
+        open_another_button3 = Button(last_window, text="NG",font=("times new roman",15, "bold"),fg="white", bg="red", height=1, width=3,command=lambda:save_bad())
+        open_another_button3.place(x=500, y=745)
+
+        reset_btn = Button(last_window, text="Reset",font=("times new roman",15, "bold"),fg="white", bg="red", height=1, width=4,command=reset_)
+        reset_btn.place(x=600, y=720)
+
+        hori_callibrate_btn = Button(last_window, text="Callibrate",font=("times new roman",15, "bold"),fg="white", bg="green", height=1, width=10,command=horizonatl_callibrate)
+        hori_callibrate_btn.place(x=1000,y=720)
 
         last_window.protocol("Another Window",on_close)
     
@@ -673,7 +770,7 @@ def open_new_window():
     global calib_flage
     def exit_function1():
         global calib_flage
-        messagebox.showwarning("showwarning","Do u want to exit?")
+        messagebox.showwarning("showwarning","Do you want to exit?")
         new_window.destroy()
         calib_flage = False
     if calib_flage:
@@ -684,7 +781,8 @@ def open_new_window():
         new_window = Toplevel(root)
         new_window.title("CALIBRATION")
         # new_window.overrideredirect(True)
-        new_window.geometry('2000x700')
+        new_window.minsize(width=1800, height=700)
+        new_window.maxsize(width=1800, height=700)
         new_window.protocol("WM_DELETE_WINDOW",exit_function1)
         
         try: os.remove("output.jpg")
@@ -734,7 +832,7 @@ def open_new_window():
         # lbl1.pack(side=LEFT)
         def confirm():
             print("xyz...........")
-            ans = askyesno(title="exit",message="do you want to exit")
+            ans = askyesno(title="exit",message="Do you want to exit")
             if ans:
                 new_window.destroy()
 
@@ -757,7 +855,7 @@ def open_new_window():
             input_value = input_entry.get()
             print("Input Value:", input_value)
             x1,y2=predict_points(float(input_value))
-            points=[[x1,  0.15525],[ 0.5,y2]]
+            points=[[x1,  0.16525],[ 0.5,y2]]
             cor=json.dumps(points)
             with open(f"setting/xy{input_value}.json", "w") as dic:
                         dic.write(cor)
@@ -782,14 +880,15 @@ def open_new_window():
         
         
         exit_button = Button(new_window,text='Exit',font=("times new roman", 20, "bold"),command=destroy_fun,bg="red",fg="white")
-        exit_button.place(x=1765,y=655)
+        exit_button.place(x=1710,y=655)
         new_window.protocol("NW_Delete_Window",confirm)
 
 
 
 root = Tk()
 root.title("INTERFACE")
-root.geometry("700x500")
+root.minsize(width=700, height=500)
+root.maxsize(width=700, height=500)
 # root.overrideredirect(True)
 bg_color = "white"
 
